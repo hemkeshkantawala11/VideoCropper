@@ -61,8 +61,7 @@ pauseButton.addEventListener('click', () => {
 });
 
 startCropper.addEventListener("click", () => {
-    const videoRect = video.getBoundingClientRect();
-    const canvasRect = canvas.getBoundingClientRect();
+    roiCanvas.removeAttribute("hidden");
     const overlayHeight = canvas.height;
     const overlayWidth = overlayHeight * aspectRatioValue;
 
@@ -79,6 +78,7 @@ startCropper.addEventListener("click", () => {
 
 stopCropper.addEventListener("click", () => {
     overlay.style.display = "none";
+    roiCanvas.setAttribute("hidden", "hidden");
     overlay.removeEventListener('mousedown', onMouseDown);
     document.removeEventListener('mousemove', onMouseMove);
     document.removeEventListener('mouseup', onMouseUp);
