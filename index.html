@@ -1,22 +1,189 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Processing</title>
+    <title>Video Processing with Selection</title>
     <style>
-        #canvas, #processedCanvas {
-            display: block;
+        .overlay{
+            display: none;
+            z-index: 10;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 30%;
+            height: 100%;
+            background-color: rgba(0, 255, 0, 0.5);
+            cursor: move;
+        }
+        body {
+            background-color: #2C2C2C;
+            color: #FFFFFF;
+            font-family: Arial, sans-serif;
+        }
+
+        #container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        #videoInput, #aspectRatio {
             margin: 10px;
+            /*background-color: red;*/
+            z-index: 2;
+        }
+
+        #video {
+            display: none;
+        }
+
+        #canvas {
             border: 1px solid black;
+            margin-top: 10px;
+            background-color: #000000;
+            position : relative;
+        }
+
+        #roiCanvas {
+            display: none;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            width: 60%;
+            margin: 20px 0;
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+            width: 200px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        select {
+            padding: 10px;
+            background-color: #444444;
+            color: white;
+            border: 1px solid #555555;
+            border-radius: 5px;
+        }
+
+        #previewContainer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        #preview {
+            border: 1px solid black;
+            width: 60%;
+            height: 200px;
+            background-color: #000000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #FFFFFF;
+        }
+
+        .buttons-bottom {
+            display: flex;
+            justify-content: space-between;
+            width: 30%;
+            margin-top: 20px;
+        }
+
+        .video-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+            width: 60%;
+        }
+
+        .video-controls input,
+        .video-controls select {
+            margin: 10px 0;
+            width: 100%;
+        }
+
+        .video-controls .small-input {
+            width: 50%;
         }
     </style>
 </head>
 <body>
-<input type="file" id="videoFileInput" accept="video/*">
-<video id="video" width="640" height="480" controls style="display:none;"></video>
-<canvas id="canvas" width="640" height="480"></canvas>
-<canvas id="processedCanvas" width="200" height="200"></canvas>
+<div id="container">
+    <input type="file" id="videoInput" accept="video/*">
+    <select id="aspectRatio">
+        <option value="9:18">9:18</option>
+        <option value="9:16">9:16</option>
+        <option value="4:3">4:3</option>
+        <option value="3:4">3:4</option>
+        <option value="1:1">1:1</option>
+        <option value="4:5">4:5</option>
+    </select>
+
+    <video id="video" controls></video>
+    <div class="overlay">
+
+    </div>
+    <canvas id="canvas"></canvas>
+    <canvas id="roiCanvas"></canvas>
+
+    <div class="controls">
+        <div class="buttons">
+            <button id="startCropper">Start Cropper</button>
+            <button id="stopCropper">Stop Cropper</button>
+        </div>
+    </div>
+
+    <div class="video-controls">
+        <div class="buttons">
+            <button id="playButton">Play</button>
+            <button id="pauseButton">Pause</button>
+        </div>
+        <label for="playbackRate">Playback Speed:</label>
+        <select id="playbackRate">
+            <option value="0.5">0.5x</option>
+            <option value="1">1x</option>
+            <option value="1.25">1.25x</option>
+            <option value="1.5">1.5x</option>
+            <option value="1.75">1.75x</option>
+            <option value="2">2x</option>
+        </select>
+        <label for="volumeControl">Volume:</label>
+        <input type="range" id="volumeControl" min="0" max="1" step="0.1" value="1" class="small-input">
+        <label for="timeline">Timeline:</label>
+        <input type="range" id="timeline" min="0" max="100" step="1" value="0">
+    </div>
+
+    <div id="previewContainer">
+        <div id="preview">
+            <p>Preview not available</p>
+        </div>
+        <div class="buttons-bottom">
+            <button id="removeCropper">Remove Cropper</button>
+            <button id="generatePreview">Generate Preview</button>
+        </div>
+    </div>
+
+</div>
+
 <script src="script.js"></script>
 </body>
 </html>
