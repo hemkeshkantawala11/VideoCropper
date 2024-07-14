@@ -7,7 +7,6 @@ const roiCtx = roiCanvas.getContext('2d');
 const aspectRatio = document.getElementById("aspectRatio");
 const startCropper = document.getElementById("startCropper");
 const stopCropper = document.getElementById("stopCropper");
-const generatePreview = document.getElementById("generatePreview");
 
 const playbackRateControl = document.getElementById('playbackRate');
 const volumeControl = document.getElementById('volumeControl');
@@ -16,14 +15,11 @@ const timelineControl = document.getElementById('timeline');
 const playButton = document.getElementById('playButton');
 const pauseButton = document.getElementById('pauseButton');
 
-const overlay = document.getElementsByClassName('overlay');
-
-let isSelecting = false;
-let startX, startY, endX, endY;
-let selected = false;
-let isDragging = false;
+const overlay = document.getElementById('overlay');
 
 let aspectRatioValue = 9 / 16;
+let isDragging = false;
+let startX;
 
 function splitString(ratio) {
     const parts = ratio.split(":");
@@ -35,6 +31,9 @@ function splitString(ratio) {
 aspectRatio.addEventListener('change', () => {
     const [num1, num2] = splitString(aspectRatio.value);
     aspectRatioValue = num1 / num2;
+    if (overlay.style.display === "block") {
+        updateOverlaySizeAndPosition();
+    }
 });
 
 playbackRateControl.addEventListener('change', () => {
@@ -62,37 +61,55 @@ pauseButton.addEventListener('click', () => {
 });
 
 startCropper.addEventListener("click", () => {
+    const videoRect = video.getBoundingClientRect();
+    const canvasRect = canvas.getBoundingClientRect();
+    const overlayHeight = canvas.height;
+    const overlayWidth = overlayHeight * aspectRatioValue;
 
-    canvas.addEventListener('mousedown', (event) => {
-        startX = event.offsetX;
-        startY = event.offsetY;
-    });
+    overlay.style.display = "block";
+    overlay.style.height = `${overlayHeight}px`;
+    overlay.style.width = `${overlayWidth}px`;
+    overlay.style.left = `${(canvas.width - overlayWidth) / 2}px`;
+    overlay.style.top = "0px";
 
-    canvas.addEventListener('mousemove', (event) => {
-        if (selected) {
-            endX = event.offsetX;
-            endY = event.offsetY;
-        }
-    });
-
-    canvas.addEventListener('mouseup', () => {
-        selected = true;
-    });
-    roiCanvas.style.display = "block";
-    
-    overlay[0].style.display = "block";
-
-
+    overlay.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
 });
 
 stopCropper.addEventListener("click", () => {
-    canvas.removeEventListener('mousedown', () => {});
-    canvas.removeEventListener('mousemove', () => {});
-    canvas.removeEventListener('mouseup', () => {});
-    roiCanvas.style.display = "none";
-    overlay[0].style.display = "none";
+    overlay.style.display = "none";
+    overlay.removeEventListener('mousedown', onMouseDown);
+    document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mouseup', onMouseUp);
 });
 
+function onMouseDown(event) {
+    isDragging = true;
+    startX = event.clientX - parseFloat(overlay.style.left);
+}
+
+function onMouseMove(event) {
+    if (isDragging) {
+        requestAnimationFrame(() => {
+            const newLeft = event.clientX - startX;
+            const overlayWidth = parseFloat(overlay.style.width);
+
+            // Ensure overlay stays within video bounds
+            if (newLeft >= 0 && newLeft + overlayWidth <= canvas.width) {
+                overlay.style.left = `${newLeft}px`;
+            } else if (newLeft < 0) {
+                overlay.style.left = "0px";
+            } else if (newLeft + overlayWidth > canvas.width) {
+                overlay.style.left = `${canvas.width - overlayWidth}px`;
+            }
+        });
+    }
+}
+
+function onMouseUp() {
+    isDragging = false;
+}
 
 videoInput.addEventListener('change', (event) => {
     const file = event.target.files[0];
@@ -106,48 +123,37 @@ videoInput.addEventListener('change', (event) => {
 video.addEventListener('loadedmetadata', () => {
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-});
-
-document.addEventListener('mouseup', () => {
-    if (isDragging) {
-        console.log("Mouse up");
-        isDragging = false;
-        overlay.style.pointerEvents = "auto"; // Re-enable pointer events after dragging
-    }
+    updateOverlaySizeAndPosition();
 });
 
 video.addEventListener('play', () => {
     const processFrame = () => {
         if (!video.paused && !video.ended) {
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            if (overlay.style.display === "block") {
+                const x = parseFloat(overlay.style.left);
+                const y = parseFloat(overlay.style.top);
+                const width = parseFloat(overlay.style.width);
+                const height = parseFloat(overlay.style.height);
 
-            if (selected) {
-                let x = startX;
-                const y = 0;
-                const videoHeight = video.videoHeight;
-                const videoWidth = videoHeight * aspectRatioValue;
-
-                if (x > Math.abs(canvas.width - videoWidth)) {
-                    x = Math.abs(canvas.width - videoWidth);
-                }
-
-                const roi = ctx.getImageData(x, y, videoWidth, videoHeight);
-
-                const tempCanvas = document.createElement('canvas');
-                const tempCtx = tempCanvas.getContext('2d');
-                tempCanvas.width = videoWidth;
-                tempCanvas.height = videoHeight;
-                tempCtx.putImageData(roi, 0, 0);
-
-                roiCanvas.width = videoWidth;
-                roiCanvas.height = videoHeight;
-                roiCtx.clearRect(0, 0, roiCanvas.width, roiCanvas.height);
-                roiCtx.drawImage(tempCanvas, 0, 0, videoWidth, videoHeight, 0, 0, roiCanvas.width, roiCanvas.height);
+                const roi = ctx.getImageData(x, y, width, height);
+                roiCanvas.width = width;
+                roiCanvas.height = height;
+                roiCtx.putImageData(roi, 0, 0);
             }
-
             requestAnimationFrame(processFrame);
         }
     };
-
     processFrame();
 });
+
+function updateOverlaySizeAndPosition() {
+    if (overlay.style.display === "block") {
+        const overlayHeight = canvas.height;
+        const overlayWidth = overlayHeight * aspectRatioValue;
+        overlay.style.height = `${overlayHeight}px`;
+        overlay.style.width = `${overlayWidth}px`;
+        overlay.style.left = `${(canvas.width - overlayWidth) / 2}px`;
+        overlay.style.top = "0px";
+    }
+}

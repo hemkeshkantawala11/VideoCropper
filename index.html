@@ -3,14 +3,14 @@
 <head>
     <title>Video Processing with Selection</title>
     <style>
-        .overlay{
+        #hemkesh{
+            position: relative;
+        }
+        .overlay {
+            margin-top:16px;
             display: none;
-            z-index: 10;
+            z-index: 10000;
             position: absolute;
-            left: 0;
-            top: 0;
-            width: 30%;
-            height: 100%;
             background-color: rgba(0, 255, 0, 0.5);
             cursor: move;
         }
@@ -29,7 +29,6 @@
 
         #videoInput, #aspectRatio {
             margin: 10px;
-            /*background-color: red;*/
             z-index: 2;
         }
 
@@ -38,14 +37,16 @@
         }
 
         #canvas {
+            z-index: 1;
             border: 1px solid black;
             margin-top: 10px;
             background-color: #000000;
-            position : relative;
+            position: relative;
         }
 
         #roiCanvas {
-            display: none;
+            border: 1px solid black;
+            margin-top: 10px;
         }
 
         .controls {
@@ -139,10 +140,10 @@
     </select>
 
     <video id="video" controls></video>
-    <div class="overlay">
-
+    <div id = "hemkesh">
+        <div class="overlay" id="overlay"></div>
+        <canvas id="canvas">     </canvas>
     </div>
-    <canvas id="canvas"></canvas>
     <canvas id="roiCanvas"></canvas>
 
     <div class="controls">
@@ -181,7 +182,6 @@
             <button id="generatePreview">Generate Preview</button>
         </div>
     </div>
-
 </div>
 
 <script src="script.js"></script>
