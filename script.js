@@ -91,7 +91,7 @@ function onMouseDown(event) {
 
 function onMouseMove(event) {
     if (isDragging) {
-        requestAnimationFrame(() => {
+
             const newLeft = event.clientX - startX;
             const overlayWidth = parseFloat(overlay.style.width);
 
@@ -103,7 +103,7 @@ function onMouseMove(event) {
             } else if (newLeft + overlayWidth > canvas.width) {
                 overlay.style.left = `${canvas.width - overlayWidth}px`;
             }
-        });
+
     }
 }
 
