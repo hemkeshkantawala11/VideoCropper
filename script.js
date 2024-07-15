@@ -16,11 +16,15 @@ const playButton = document.getElementById('playButton');
 const pauseButton = document.getElementById('pauseButton');
 
 const overlay = document.getElementById('overlay');
+const generatePreviewButton = document.getElementById('generatePreview');
 
 let aspectRatioValue = 9 / 16;
 let isDragging = false;
 let startX;
+let intervalId;
+let data = [];
 
+// Utility function to split string ratio
 function splitString(ratio) {
     const parts = ratio.split(":");
     const num1 = parseInt(parts[0], 10);
@@ -28,6 +32,7 @@ function splitString(ratio) {
     return [num1, num2];
 }
 
+// Handle aspect ratio change
 aspectRatio.addEventListener('change', () => {
     const [num1, num2] = splitString(aspectRatio.value);
     aspectRatioValue = num1 / num2;
@@ -36,30 +41,37 @@ aspectRatio.addEventListener('change', () => {
     }
 });
 
+// Handle playback rate change
 playbackRateControl.addEventListener('change', () => {
     video.playbackRate = playbackRateControl.value;
 });
 
+// Handle volume change
 volumeControl.addEventListener('input', () => {
     video.volume = volumeControl.value;
 });
 
+// Handle timeline change
 timelineControl.addEventListener('input', () => {
     video.currentTime = video.duration * (timelineControl.value / 100);
 });
 
+// Update timeline control as video plays
 video.addEventListener('timeupdate', () => {
     timelineControl.value = (video.currentTime / video.duration) * 100;
 });
 
+// Play video
 playButton.addEventListener('click', () => {
     video.play();
 });
 
+// Pause video
 pauseButton.addEventListener('click', () => {
     video.pause();
 });
 
+// Start cropper
 startCropper.addEventListener("click", () => {
     roiCanvas.removeAttribute("hidden");
     const overlayHeight = canvas.height;
@@ -74,43 +86,72 @@ startCropper.addEventListener("click", () => {
     overlay.addEventListener('mousedown', onMouseDown);
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
+
+    startRecording();
 });
 
+// Stop cropper
 stopCropper.addEventListener("click", () => {
     overlay.style.display = "none";
     roiCanvas.setAttribute("hidden", "hidden");
     overlay.removeEventListener('mousedown', onMouseDown);
     document.removeEventListener('mousemove', onMouseMove);
     document.removeEventListener('mouseup', onMouseUp);
+
+    stopRecording();
 });
 
+// Start recording data at intervals
+function startRecording() {
+    intervalId = setInterval(() => {
+        const timeStamp = video.currentTime;
+        const coordinates = [
+            parseFloat(overlay.style.left),
+            parseFloat(overlay.style.top),
+            parseFloat(overlay.style.width),
+            parseFloat(overlay.style.height)
+        ];
+        const volume = video.volume;
+        const playbackRate = video.playbackRate;
+
+        data.push({ timeStamp, coordinates, volume, playbackRate });
+    }, 1000); // Record every second
+}
+
+// Stop recording data
+function stopRecording() {
+    clearInterval(intervalId);
+}
+
+// Handle mousedown event
 function onMouseDown(event) {
     isDragging = true;
     startX = event.clientX - parseFloat(overlay.style.left);
 }
 
+// Handle mousemove event
 function onMouseMove(event) {
     if (isDragging) {
+        const newLeft = event.clientX - startX;
+        const overlayWidth = parseFloat(overlay.style.width);
 
-            const newLeft = event.clientX - startX;
-            const overlayWidth = parseFloat(overlay.style.width);
-
-            // Ensure overlay stays within video bounds
-            if (newLeft >= 0 && newLeft + overlayWidth <= canvas.width) {
-                overlay.style.left = `${newLeft}px`;
-            } else if (newLeft < 0) {
-                overlay.style.left = "0px";
-            } else if (newLeft + overlayWidth > canvas.width) {
-                overlay.style.left = `${canvas.width - overlayWidth}px`;
-            }
-
+        // Ensure overlay stays within video bounds
+        if (newLeft >= 0 && newLeft + overlayWidth <= canvas.width) {
+            overlay.style.left = `${newLeft}px`;
+        } else if (newLeft < 0) {
+            overlay.style.left = "0px";
+        } else if (newLeft + overlayWidth > canvas.width) {
+            overlay.style.left = `${canvas.width - overlayWidth}px`;
+        }
     }
 }
 
+// Handle mouseup event
 function onMouseUp() {
     isDragging = false;
 }
 
+// Handle video input change
 videoInput.addEventListener('change', (event) => {
     const file = event.target.files[0];
     if (file) {
@@ -120,12 +161,14 @@ videoInput.addEventListener('change', (event) => {
     }
 });
 
+// Handle video metadata loaded
 video.addEventListener('loadedmetadata', () => {
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     updateOverlaySizeAndPosition();
 });
 
+// Process video frame by frame
 video.addEventListener('play', () => {
     const processFrame = () => {
         if (!video.paused && !video.ended) {
@@ -147,6 +190,7 @@ video.addEventListener('play', () => {
     processFrame();
 });
 
+// Update overlay size and position
 function updateOverlaySizeAndPosition() {
     if (overlay.style.display === "block") {
         const overlayHeight = canvas.height;
@@ -157,3 +201,30 @@ function updateOverlaySizeAndPosition() {
         overlay.style.top = "0px";
     }
 }
+
+
+video.addEventListener('ended', () => {
+    generatePreviewButton.disabled = false;
+});
+
+
+
+// Generate JSON file and download it
+generatePreviewButton.addEventListener('click', () => {
+    if(generatePreviewButton.disabled === true){
+        window.alert("Please wait until the video ends");
+    }
+    else{
+        const json = JSON.stringify(data, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'data.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+    
+});

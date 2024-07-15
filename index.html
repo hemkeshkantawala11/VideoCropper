@@ -7,7 +7,7 @@
             position: relative;
         }
         .overlay {
-            margin-top:16px;
+            margin-top: 16px;
             display: none;
             z-index: 10000;
             position: absolute;
@@ -115,9 +115,9 @@
     </select>
 
     <video id="video" controls></video>
-    <div id = "hemkesh">
+    <div id="hemkesh">
         <div class="overlay" id="overlay"></div>
-        <canvas id="canvas" >     </canvas>
+        <canvas id="canvas"></canvas>
     </div>
     <canvas id="roiCanvas"></canvas>
 
@@ -147,6 +147,8 @@
         <label for="timeline">Timeline:</label>
         <input type="range" id="timeline" min="0" max="100" step="1" value="0">
     </div>
+
+    <button id="generatePreview" disabled>Generate JSON</button>
 </div>
 
 <script src="script.js"></script>
